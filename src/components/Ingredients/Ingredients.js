@@ -1,4 +1,4 @@
-import React, {useState, useReducer, useEffect, useCallback} from 'react';
+import React, {useState, useReducer, useEffect, useCallback, useMemo} from 'react';
 
 import IngredientForm from './IngredientForm';
 import IngredientList from './IngredientList';
@@ -79,7 +79,7 @@ here we call second function 'dispatch' instead of 'setUserIngredients'*/
     console.log('updated',UserIngredients);
   },[UserIngredients]);
 
-  const addIngredientHandler = (ingredient) => {
+  const addIngredientHandler = useCallback((ingredient) => {
     //setIsLoading(true);
 dispatchHttp({type:'SEND'}); //this will automatically set loading is true and error is null
     fetch('https://react-hook-app-34f37.firebaseio.com/ingredients.json',
@@ -98,7 +98,7 @@ dispatchHttp({type:'SEND'}); //this will automatically set loading is true and e
         type: 'ADD', 
         ingredient:{id: responseData.name, ...ingredient}});
     });
-  };
+  },[]);
 
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
       //setUserIngredients(filteredIngredients);
@@ -109,7 +109,7 @@ dispatchHttp({type:'SEND'}); //this will automatically set loading is true and e
   the dependency that change leads to execution of this hook.
   if [] then execute only once. */
 
-  const removeIngredientHandler = ingredientId => {
+  const removeIngredientHandler = useCallback((ingredientId) => {
     //setIsLoading(true);
     dispatchHttp({type:'SEND'});
     fetch(`https://react-hook-app-34f37.firebaseio.com/ingredients/${ingredientId}.json`,
@@ -124,13 +124,21 @@ dispatchHttp({type:'SEND'}); //this will automatically set loading is true and e
       //setAppError(error.message);
       dispatchHttp({type: 'ERROR', errorMessage: error.message});
     });
-  };
+  },[]);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     //setAppError(null);
     //setIsLoading(false);
     dispatchHttp({type: 'CLEAR'});
-  }
+  },[]);
+
+  const ingredientList = useMemo(() => {
+    return(
+      <IngredientList 
+      ingredients={UserIngredients} 
+      onRemoveItem ={removeIngredientHandler}/>
+    );
+  },[UserIngredients,removeIngredientHandler]);
 
   return (
     <div className="App">
@@ -141,7 +149,7 @@ dispatchHttp({type:'SEND'}); //this will automatically set loading is true and e
 
       <section>
         <Search onLoadIngredients ={filteredIngredientsHandler}/>
-       <IngredientList ingredients={UserIngredients} onRemoveItem ={removeIngredientHandler}/>
+        {ingredientList}
       </section>
     </div>
   );
